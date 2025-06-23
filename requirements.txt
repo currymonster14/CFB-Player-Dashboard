@@ -1,6 +1,5 @@
-import streamlit
-import pandas
-import numpy
-import plotly
-import openpyxl
-from urllib.parse import quote
+streamlit
+pandas
+numpy
+plotly
+openpyxl
