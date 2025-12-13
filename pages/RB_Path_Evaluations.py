@@ -5,116 +5,283 @@ Created on Sun Jun 15 22:03:26 2025
 @author: jayap
 """
 # Full-featured QB_Path_Evaluations.py with sliders and PFF tables
-import os
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import plotly.graph_objects as go
+#st.set_page_config(page_title="Player Evaluation", layout="wide")
 
-st.set_page_config(page_title="Player Details", layout="wide")
+# ----------------------------
+# Functions
+# ----------------------------
 
-# Load data
 def load_data():
-    df1 = pd.read_excel('CFB Player Combined Table.xlsx', sheet_name=0)
-    df2 = pd.read_excel('CFB Player Combined Table.xlsx', sheet_name=3)
-    df3 = pd.read_excel('CFB Player Combined Table.xlsx', sheet_name=4)
-    df = pd.merge(pd.merge(df1, df2, how='right'), df3, how='left')
-    df = df.dropna(subset=["PLAYER_ID", "NAME"])
-    df["PLAYER_ID"] = df["PLAYER_ID"].astype(str).str.strip()
-    # df = df.dropna(subset = ["Written Evaluation"])
-    return df.reset_index(drop=True)
+    df1 = pd.read_excel("Utah Transfer Portal Master Sheet.xlsx", sheet_name=2)
+    df2 = pd.read_excel("Utah TP Cross Check Board.xlsx", sheet_name=3)
+    data = pd.merge(df1, df2, how="left")
+
+    # clean columns
+    data = data.dropna(subset=["Film Grade"])
+    data["Name"] = data["Name"].astype(str).str.strip()
+    data["GRADE"] = pd.to_numeric(data["GRADE"], errors="coerce").round(2)
+    data["FirstName"] = data["Name"].str.split().str[0]
+    data["LastName"]  = data["Name"].str.split().str[-1]
+    #Create player_id: FirstName_LastName_School (all lowercase, underscores)
+    data["player_id"] = (
+        data["FirstName"].str.replace(r"[^A-Za-z0-9]", "", regex=True).str.lower()
+        + "_" +
+        data["LastName"].str.replace(r"[^A-Za-z0-9]", "", regex=True).str.lower()
+        + "_" +
+        data["Team"].str.replace(r"[^A-Za-z0-9]", "", regex=True).str.lower()
+    )
+    return data.reset_index(drop=True)
+
+def display_player(player):
+    
+    ###Bio
+    college = player["COLLEGE"]
+    number = player["#"]
+    position = player["POS"]
+    conference = player["CONF"]
+    player_name = player['Name']
+    st.markdown(
+        f"""
+        <h1 style='text-align: center; font-size: 70px'; margin-bottom: .05em;'>
+            {player_name} - {position}
+        </h1>
+        """,
+        unsafe_allow_html = True
+    )
+    st.markdown(
+        f"""
+        <h1 style='text-align: center; font-size: 30px'; margin-top: .05em;'>
+            {college}, #{number}, Conference: {conference}
+        </h1>
+        """,
+        unsafe_allow_html = True
+    )
+
+    #Top Left Graph
+    prospect_data = {
+        "FCS Prospect %": pd.to_numeric((player['FCS Prospect Percentile']*100), errors="coerce").round(2),
+        "G5 Prospect %": pd.to_numeric((player['G5 Prospect Percentile']*100), errors="coerce").round(2),
+        "P4 Prospect %": pd.to_numeric((player['P4 Prospect Percentile']*100), errors="coerce").round(2)
+    }
+    
+    def value_to_color(val):
+        if val <= 40:
+            return "red"
+        elif val <= 70:
+            return "yellow"
+        else:
+            return "green"
+
+    bar_colors = [value_to_color(v) for v in prospect_data.values()]
+    
+    # Split page in half
+    col_left, col_right = st.columns(2)
+    
+    with col_left:
+        st.markdown(
+            f"""
+            <h1 style='text-align: center; font-size: 22px';> 
+            Production and Film Ranking
+            </h1>
+            """,
+            unsafe_allow_html = True
+        )
+    
+        fig = go.Figure(go.Bar(
+            x=list(prospect_data.values()),
+            y=list(prospect_data.keys()),
+            orientation='h',
+            marker=dict(
+                color=bar_colors,  # later you can customize colors based on value
+            ),
+            text=[f"{v}%" for v in prospect_data.values()],
+            textposition='auto'
+        ))
+    
+        fig.update_layout(
+            xaxis_title="Percentile",
+            yaxis_title="",
+            margin=dict(l=20, r=20, t=20, b=20),
+            height=300
+        )
+    
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Example data
+    player_metrics = {
+        "Quality of Player": player["Film Grade"],
+        "Average Value Metric": player["Average Value"]
+    }
     
 
-def load_pff_data():
-    return pd.read_excel("Data Tables/PFF RB Data.xlsx")
-
-def height_to_inches(code):
-    try:
-        code = int(code)
-        return (code // 1000) * 12 + ((code % 1000) // 10) + (code % 10) / 8
-    except:
-        return None
-
-def round_score(score):
-    return round(score, 2)
-
-def display_player(player, pff_df):
-    st.title(f"Player: {player['NAME']}")
-    bio_col, img_col = st.columns([3, 1])
-
-    with bio_col:
-        st.subheader(f"School: {player['SCHOOL']}")
-        st.subheader(f"Height: {player['HEIGHT']} | Weight: {player['WEIGHT']:.0f} | Hometown: {player['HOMETOWN']}, {player['HOME STATE']}")
-        st.subheader(f"Position: {player['PROJECTED POSITION']}")
-        st.subheader(f"Scheme: {player['Ideal Scheme']}")
-        st.subheader(f"Composite Score: {player['Composite Score']:.2f}")
-        # for col in player.index[9]:
-        #     st.slider(col, 1.0, 7.0, float(player[col]), step = 0.5, disabled = True)
-
-    with img_col:
-        img_path = os.path.join("images", f"{player['NAME']} Profile.png")
-        if os.path.exists(img_path):
-            st.image(img_path, use_container_width=True)
-        else:
-            st.write("No image available.")
-
-    st.markdown("### 🔢 Player Grades")
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.subheader("Athletic Ability")
-        for col in player.index[13:19]:
-            st.slider(col, 1, 7, int(player[col]), 1, disabled=True)
-
-    with col2:
-        st.subheader("Receiving Grades")
-        for col in player.index[19:24]:
-            st.slider(col, 1, 7, int(player[col]), 1, disabled=True)
-
-    with col3:
-        st.subheader("Run Grades")
-        for col in player.index[24:28]:
-            st.slider(col, 1, 7, int(player[col]), 1, disabled=True)
-
-    st.markdown("---")
-    pff_row = pff_df[pff_df["PLAYER_ID"].astype(str).str.strip() == player["PLAYER_ID"]]
-
-    if not pff_row.empty:
-        pff_row = pff_row.reset_index(drop=True).drop(pff_row.columns[:3], axis=1)
-        pff_row["YARDS BEFORE CONTACT %"] = (pd.to_numeric(pff_row["YARDS BEFORE CONTACT %"], errors="coerce") * 100).round(2)
-        pff_display = pff_row.T.reset_index()
-        pff_display.columns = ["Metric", "Value"]
+    ### Top Right Information
+    with col_right:
+        def value_to_color(val):
+            if val <= -1:
+                return "red"
+            elif val <= 1:
+                return "yellow"
+            elif val >1:
+                return "green"
         
+        def value_to_colors(val):
+            if val <= 3.75:
+                return "red"
+            elif val <= 4.25:
+                return "yellow"
+            elif val >4.25:
+                return "green"
+        bar_colors = [value_to_color(v) for v in player_metrics.values()]
+        bar_colors_2 = [value_to_colors(v) for v in player_metrics.values()]
+        # Column title
+        st.markdown(
+            "<h1 style='text-align: center; font-size: 22px;'>Projection and Tier</h1>",
+            unsafe_allow_html=True
+        )
+    
+        for metric, value in player_metrics.items():
+            fig = go.Figure()
+            # Add horizontal bar with value
+            fig.add_trace(go.Bar(
+                x=[value],
+                y=[0],  # single bar
+                orientation='h',
+                marker=dict(color=bar_colors_2 if metric == "Quality of Player" else bar_colors),
+                showlegend=False,
+                text = [f"{value:.1f}"],
+                textposition='outside'
+            ))
+    
+            fig.update_layout(
+                title=dict(
+                    text=metric,
+                    x=0.0,
+                    xanchor='left',
+                    yanchor='bottom',
+                    font=dict(size=22)
+                ),
+                xaxis=dict(range=[1,7] if metric == "Quality of Player" else [-10,10], showticklabels=False, showgrid=False),
+                yaxis=dict(showticklabels=False, showgrid=False),
+                height=100,
+                margin=dict(l=20, r=20, t=30, b=10),  # top margin gives space for title
+            )
+    
+            st.plotly_chart(fig, use_container_width=False)  # keep fixed width
+            
 
-        table_col, eval_col = st.columns([2, 2])
+        portal_entry = player["TRANSFER PORTAL"]
+        tier = player["TIER"]
+        fit = player["SCHEME FIT"]
+        arch = player["ARCHETYPE"]
+        
+        with col_right:
+            st.markdown(
+                f"""
+                <h2 style='text-align: left; font-size: 12px';>
+                Transfer Portal: {portal_entry} <br> Tier: {tier} <br> Scheme Fit: {fit} <br> Archetype: {arch}
+                </h2>
+                """,
+                unsafe_allow_html = True
+            )
+        
+        
+    ##Middle Table
+    st.markdown(
+        f"""
+        <h1 style='text-align: center; font-size: 30px'>
+            Player Grades
+        </h1>
+        """,
+        unsafe_allow_html = True
+    )
 
-        with table_col:
-            st.markdown("### 📊 PFF Stats")
-            st.markdown("#### Box Score Stats")
-            st.dataframe(pff_display, hide_index=True, use_container_width=True)
+    pass_data, run_data = get_pass_run_data(player)
+        
+    # Build HTML table
+    html_table = """
+    <table style="border-collapse: collapse; width: 100%;">
+        <tr>
+            <th colspan="2" style="border: 1px solid black; text-align:center;">Pass</th>
+            <th colspan="2" style="border: 1px solid black; text-align:center;">Run</th>
+        </tr>
+        <tr>
+            <th style="border: 1px solid black; text-align:center;"> Criteria Question</th>
+            <th style="border: 1px solid black; text-align:center;">Evaluation</th>
+            <th style="border: 1px solid black; text-align:center;">Criteria Question</th>
+            <th style="border: 1px solid black; text-align:center;">Evaluation</th>
+        </tr>
+    """
+    
+    # Number of rows is max of pass/run
+    n_rows = max(len(pass_data), len(run_data))
+    
+    for i in range(n_rows):
+        html_table += "<tr>"
+        # Pass column
+        if i < len(pass_data):
+            q, a = pass_data[i]
+            html_table += f'<th style="border: 1px solid black;">{q}</td>'
+            html_table += f'<td style="border: 1px solid black;">{a}</td>'
+        else:
+            html_table += '<th style="border: 1px solid black;"></td>' * 2
+    
+        # Run column
+        if i < len(run_data):
+            q, a = run_data[i]
+            html_table += f'<th style="border: 1px solid black;">{q}</td>'
+            html_table += f'<td style="border: 1px solid black;">{a}</td>'
+        else:
+            html_table += '<th style="border: 1px solid black;"></td>' * 2
+    
+        html_table += "</tr>"
+    
+    html_table += "</table>"
 
-        with eval_col:
-            st.markdown("### 📝 Written Evaluation")
-            st.markdown(player.get("Written Evaluation", "No evaluation available."))
-    else:
-        st.markdown("### 📝 Written Evaluation")
-        st.markdown(player.get("Written Evaluation", "No evaluation available."))
-        st.info("No PFF data available for this player.")
+    st.markdown(html_table, unsafe_allow_html=True)
+    
+    
 
+def get_pass_run_data(player):
+    # Map question -> column in Excel
+    pass_questions = {
+        "Man Coverage Matchup Advantage": "Man Coverage Matchup Advantage",
+        "Field Stretcher": "Field Stretcher",
+        "Ball Skills": "Ball Skills",
+        "Yards After Catch": "Yards After Catch",
+        "Pass Protection": "Pass Protection"
+    }
+
+    run_questions = {
+        "Gap Run Vision": "Gap Run Vision",
+        "Zone Run Vision": "Zone Run Vision",
+        "Create At/Behind the LOS": "Create At/Behind the LOS",
+        "Create At the 2nd Level": "Create At the 2nd Level",
+        "Homerun Ability": "Homerun Ability"
+    }
+
+    # Build lists of tuples (Question, Answer)
+    pass_data = [(q, player[col]) for q, col in pass_questions.items() if col in player.index]
+    run_data = [(q, player[col]) for q, col in run_questions.items() if col in player.index]
+
+    return pass_data, run_data
+
+# ----------------------------
 # Main
-player_id = st.query_params['player_id']
+# ----------------------------
+params = st.query_params
+player_id = params.get("player_id", [])
+
 if not player_id:
-    st.error("No player ID provided.")
+    st.warning("No player selected. Go to a dashboard first.")
     st.stop()
 
-if isinstance(player_id, list):
-    player_id = player_id[0]
-
 data = load_data()
-data["HEIGHT"] = data["HEIGHT"].apply(height_to_inches)
-data["Composite Score"] = data["Composite Score"].apply(round_score)
-player = data[data["PLAYER_ID"] == player_id]
-pff_df = load_pff_data()
+player = data[data["player_id"] == player_id]
 
 if player.empty:
-    st.error(f"No player found with PLAYER_ID: {player_id}")
+    st.error(f"No player found with player_id: {player_id}")
 else:
-    display_player(player.iloc[0], pff_df)
+    display_player(player.iloc[0])
