@@ -71,7 +71,7 @@ data["PLAYER_DETAIL_LINK"] = data["player_id"].apply(
     lambda pid: f"/RB_Path_Evaluations?player_id={pid}"
     )
 
-cols = ["PLAYER_DETAIL_LINK", "Name", "Team", "CONF", "TRANSFER PORTAL", "TIER", "SCHEME FIT", "GRADE", "ARCHETYPE"]
+cols = ["PLAYER_DETAIL_LINK", "Name", "COLLEGE", "CONF", "TRANSFER PORTAL", "TIER", "SCHEME FIT", "GRADE", "ARCHETYPE"]
 
 st.write("### Running Backs")
 st.dataframe(

@@ -10,10 +10,10 @@ import pandas as pd
 import streamlit as st
 from urllib.parse import quote
 
-st.set_page_config(page_title="TE Dashboard", layout="wide")
+st.set_page_config(page_title="IOL Dashboard", layout="wide")
 def load_data():
-    df1 = pd.read_excel("Utah Transfer Portal Master Sheet.xlsx", sheet_name=4)
-    df2 = pd.read_excel("Utah TP Cross Check Board.xlsx", sheet_name=5)
+    df1 = pd.read_excel("Utah Transfer Portal Master Sheet.xlsx", sheet_name=6, header = 1)
+    df2 = pd.read_excel("Utah TP Cross Check Board.xlsx", sheet_name=13, header = 1)
     data = pd.merge(df1, df2, how="left", on="Name")
     data = data.dropna(subset=["Film Grade"])
     data["Name"] = data["Name"].astype(str).str.strip()
@@ -27,7 +27,7 @@ def load_data():
         + "_" +
         data["LastName"].str.replace(r"[^A-Za-z0-9]", "", regex=True).str.lower()
         + "_" +
-        data["Team"].str.replace(r"[^A-Za-z0-9]", "", regex=True).str.lower()
+        data["School"].str.replace(r"[^A-Za-z0-9]", "", regex=True).str.lower()
     )
     return data.reset_index(drop=True)
 
@@ -35,10 +35,10 @@ data = load_data()
 
 # Filters
 # ----------------------------
-proj = st.sidebar.multiselect("Role", ['All'] + sorted(data["PRO PROJECTION"].dropna().unique()))
-conf = st.sidebar.multiselect("Conference", ["All"] + sorted(data["CONF"].dropna().unique()))
+##proj = st.sidebar.multiselect("Role", ['All'] + sorted(data["PRO PROJECTION"].dropna().unique()))
+conf = st.sidebar.multiselect("Conference", ["All"] + sorted(data["Conference"].dropna().unique()))
 arch = st.sidebar.multiselect("Archetype", ["All"] + sorted(data["ARCHETYPE"].dropna().unique()))
-#scheme = st.sidebar.selectbox("Scheme Fit", ["All"] + sorted(data["SCHEME FIT"].dropna().unique()))
+scheme = st.sidebar.selectbox("Scheme Fit", ["All"] + sorted(data["SCHEME FIT"].dropna().unique()))
 tier = st.sidebar.multiselect("Tier", ["All"] + sorted(data["TIER"].dropna().unique()))
 portal = st.sidebar.multiselect(
     "Transfer Portal",
@@ -47,14 +47,14 @@ portal = st.sidebar.multiselect(
 )
 
 # Apply filters
-if proj and "All" not in proj:
-    data = data[data["PRO PROJECTION"].isin(proj)]
+#if proj and "All" not in proj:
+#    data = data[data["PRO PROJECTION"].isin(proj)]
 if conf and "All" not in conf:
-    data = data[data["CONF"].isin(conf)]
+    data = data[data["Conference"].isin(conf)]
 if arch and "All" not in arch:
     data = data[data["ARCHETYPE"].isin(arch)]
-##if scheme != "All":
-##    data = data[data["SCHEME FIT"] == scheme]
+if scheme != "All":
+    data = data[data["SCHEME FIT"] == scheme]
 if tier and "All" not in tier:
     data = data[data["TIER"].isin(tier)]
 if portal and "All" not in portal:
@@ -69,12 +69,12 @@ data = data[data['GRADE'].between(min_grade, max_grade)]
 # ----------------------------
 # Add clickable link
 data["PLAYER_DETAIL_LINK"] = data["player_id"].apply(
-    lambda pid: f"/TE_Path_Evaluations?player_id={pid}"
+    lambda pid: f"/IOL_Path_Evaluations?player_id={pid}"
     )
 
-cols = ["PLAYER_DETAIL_LINK", "Name", "COLLEGE", "CONF", "TRANSFER PORTAL", "TIER", "PRO PROJECTION", "GRADE", "ARCHETYPE"]
+cols = ["PLAYER_DETAIL_LINK", "Name", "COLLEGE", "Conference", "TRANSFER PORTAL", "TIER", "SCHEME FIT", "GRADE", "ARCHETYPE"]
 
-st.write("### Tight Ends")
+st.write("### Interior Offensive Linemen")
 st.dataframe(
     data[cols],
     column_config={
