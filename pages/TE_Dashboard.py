@@ -68,7 +68,7 @@ with col2:
     )
 
 with col3:
-    scheme = st.selectbox(
+    proj = st.selectbox(
         "Role",
         ["All"] + sorted(data["PRO PROJECTION"].dropna().unique())
     )

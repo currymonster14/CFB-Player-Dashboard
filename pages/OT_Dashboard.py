@@ -45,19 +45,51 @@ def load_data():
 
 data = load_data()
 
+# Slider filter
+st.markdown("### Composite Score")
+min_grade, max_grade = st.slider("Composite Score", 1.0, 7.0, (1.0, 7.0), 0.1)
+data = data[data['GRADE'].between(min_grade, max_grade)]
 # Filters
 # ----------------------------
-#proj = st.sidebar.multiselect("Role", ['All'] + sorted(data["PRO PROJECTION"].dropna().unique()))
-conf = st.sidebar.multiselect("Conference", ["All"] + sorted(data["Conference"].dropna().unique()))
-arch = st.sidebar.multiselect("Archetype", ["All"] + sorted(data["ARCHETYPE"].dropna().unique()))
-scheme = st.sidebar.selectbox("Scheme Fit", ["All"] + sorted(data["SCHEME FIT"].dropna().unique()))
-tier = st.sidebar.multiselect("Tier", ["All"] + sorted(data["TIER"].dropna().unique()))
-portal = st.sidebar.multiselect(
-    "Transfer Portal",
-    ["All"] + sorted(data["TRANSFER PORTAL"].dropna().unique()),
-    default=["All"]
-)
+st.markdown("### Filters")
 
+col1, col2, col3, col4, col5 = st.columns(5)
+st.divider()
+with col1:
+    conf = st.multiselect(
+        "Conference",
+        ["All"] + sorted(data["Conference"].dropna().unique()),
+        default=["All"]
+    )
+
+with col2:
+    arch = st.multiselect(
+        "Archetype",
+        ["All"] + sorted(data["ARCHETYPE"].dropna().unique()),
+        default=["All"]
+    )
+
+with col3:
+    scheme = st.selectbox(
+        "Scheme Fit",
+        ["All"] + sorted(data["SCHEME FIT"].dropna().unique())
+    )
+
+with col4:
+    tier = st.multiselect(
+        "Tier",
+        ["All"] + sorted(data["TIER"].dropna().unique()),
+        default=["All"]
+    )
+
+with col5:
+    portal = st.multiselect(
+        "Transfer Portal",
+        ["All"] + sorted(data["TRANSFER PORTAL"].dropna().unique()),
+        default=["All"]
+    )
+
+df = data.copy()
 # Apply filters
 #if proj and "All" not in proj:
 #    data = data[data["PRO PROJECTION"].isin(proj)]
@@ -72,9 +104,6 @@ if tier and "All" not in tier:
 if portal and "All" not in portal:
     data = data[data["TRANSFER PORTAL"].isin(portal)]
 
-# Slider filter
-min_grade, max_grade = st.slider("Composite Score", 1.0, 7.0, (1.0, 7.0), 0.1)
-data = data[data['GRADE'].between(min_grade, max_grade)]
 
 # ----------------------------
 # Create clickable LinkColumn

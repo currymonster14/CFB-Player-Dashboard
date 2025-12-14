@@ -116,11 +116,11 @@ def display_player(player):
     )
     st.markdown(
         f"""
-        <h1 style='text-align: center; font-size: 30px'; margin-top: .05em;'>
-            {college}, #{number}, Conference: {conference}
-        </h1>
+        <h2 style='text-align:center; font-size:30px; margin-top:0;'>
+            {player['COLLEGE']} • #{int(player['#'])} • {player['CONF']}
+        </h2>
         """,
-        unsafe_allow_html = True
+        unsafe_allow_html=True
     )
 
     #Top Left Graph
@@ -218,10 +218,15 @@ def display_player(player):
             
         
     st.markdown(
-        f"""
-        **Transfer Portal:** {player['TRANSFER PORTAL']} | **Tier:** {player['TIER']}
-        \n**Scheme Fit:** {fit} | **Archetype:** {player['ARCHETYPE']}
-        """
+    f"""
+    <div style="text-align: center; font-size: 18px;">
+        <b>Transfer Portal:</b> {player['TRANSFER PORTAL']} &nbsp;|&nbsp;
+        <b>Tier:</b> {player['TIER']} &nbsp;|&nbsp;
+        <b>Scheme Fit:</b> {fit} &nbsp;|&nbsp;
+        <b>Archetype:</b> {player['ARCHETYPE']}
+    </div>
+    """,
+    unsafe_allow_html=True
     )
         
         

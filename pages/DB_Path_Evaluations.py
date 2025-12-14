@@ -8,7 +8,7 @@ Created on Sun Jun 15 22:03:26 2025
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-st.set_page_config(page_title="WR Evaluation", layout="wide")
+st.set_page_config(page_title="DB Evaluation", layout="wide")
 
 # 🔒 Hide this page from the sidebar
 st.markdown(
@@ -27,8 +27,8 @@ st.markdown(
 # ----------------------------
 
 def load_data():
-    df1 = pd.read_excel("Utah Transfer Portal Master Sheet.xlsx", sheet_name=3)
-    df2 = pd.read_excel("Utah TP Cross Check Board.xlsx", sheet_name=4)
+    df1 = pd.read_excel("Utah Transfer Portal Master Sheet.xlsx", sheet_name=8)
+    df2 = pd.read_excel("Utah TP Cross Check Board.xlsx", sheet_name=21)
     data = pd.merge(df1, df2, how="left")
 
     # clean columns
@@ -117,12 +117,12 @@ def display_player(player):
     st.markdown(
         f"""
         <h2 style='text-align:center; font-size:30px; margin-top:0;'>
-            {player['COLLEGE']} • #{player['#']} • {player['CONF']}
+            {player['COLLEGE']} • #{int(player['#'])} • {player['CONF']}
         </h2>
         """,
         unsafe_allow_html=True
     )
-
+    
     #Top Left Graph
     prospect_data = {
         "FCS Prospect %": pd.to_numeric((player['FCS Prospect Percentile']*100), errors="coerce").round(2),
@@ -222,14 +222,13 @@ def display_player(player):
     <div style="text-align: center; font-size: 18px;">
         <b>Transfer Portal:</b> {player['TRANSFER PORTAL']} &nbsp;|&nbsp;
         <b>Tier:</b> {player['TIER']} &nbsp;|&nbsp;
-        <b>Role:</b> {proj} &nbsp;|&nbsp;
+        <b>Role:</b> {player['PRO PROJECTION']} &nbsp;|&nbsp;
         <b>Scheme Fit:</b> {fit} &nbsp;|&nbsp;
         <b>Archetype:</b> {player['ARCHETYPE']}
     </div>
     """,
     unsafe_allow_html=True
     )
-    
     
         
         
@@ -250,7 +249,7 @@ def display_player(player):
     <table style="border-collapse: collapse; width: 100%;">
         <tr>
             <th colspan="2" style="border: 1px solid black; text-align:center;">Pass</th>
-            <th colspan="2" style="border: 1px solid black; text-align:center;">Pass</th>
+            <th colspan="2" style="border: 1px solid black; text-align:center;">Run</th>
         </tr>
         <tr>
             <th style="border: 1px solid black; text-align:center;"> Criteria Question</th>
@@ -292,16 +291,20 @@ def display_player(player):
 def get_pass_run_data(player):
     # Map question -> column in Excel
     pass_questions = {
-        "Vs Press Coverage": "Vs Press Coverage",
-        "vs Off Coverage": "vs Off Coverage",
-        "vs Man Coverage": "vs Man Coverage",
-        "vs Zone Coverage": "vs Zone Coverage"
+        "vs TE/RB, Man Coverage": "vs TE/RB, Man Coverage",
+        "Shallow Zone Mover": "Shallow Zone Mover",
+        "Deep Range": "Deep Range",
+        "Ball Skills": "Ball Skills",
+        "Open Field Tackling": "Open Field Tackling",
+        
+        
     }
 
     run_questions = {
-        "Ball Skills": "Ball Skills",
-        "Field Stretching": "Field Stretching",
-        "Yards After Catch/Contact": "Yards After Catch/Contact"
+        "Stack and Shed": "Stack and Shed",
+        "Get Downhill": "Get Downhill",
+        "Open Field Tackling": "Open Field Tackling",
+        "Ball Sense": "Ball Sense",
     }
 
     # Build lists of tuples (Question, Answer)
