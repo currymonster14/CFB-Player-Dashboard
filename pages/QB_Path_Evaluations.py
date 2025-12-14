@@ -8,8 +8,19 @@ Created on Sun Jun 15 22:03:26 2025
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-#st.set_page_config(page_title="Player Evaluation", layout="wide")
+st.set_page_config(page_title="QB Evaluation", layout="wide")
 
+# 🔒 Hide this page from the sidebar
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebarNav"] a[href*="Path_Evaluations"] {
+        display: none !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 # ----------------------------
 # Functions
 # ----------------------------
@@ -34,6 +45,58 @@ def load_data():
         data["Team"].str.replace(r"[^A-Za-z0-9]", "", regex=True).str.lower()
     )
     return data.reset_index(drop=True)
+
+def film_color(val):
+    if val <= 3.75:
+        return "red"
+    elif val <= 4.25:
+        return "gold"
+    elif val <=4.49:
+        return "orange"
+    else:
+        return "green"
+
+def prospect_color(val):
+    if val <= 40:
+        return "red"
+    elif val <= 70:
+        return "gold"
+    else:
+        return "green"
+
+def av_color(val):
+    if val <= -1:
+        return "red"
+    elif val <= 1:
+        return "gold"
+    else:
+        return "green"
+
+def metric_bar(title, value, x_range, color):
+    fig = go.Figure(go.Bar(
+        x=[value],
+        y=["metric"],
+        orientation="h",
+        marker=dict(color=color),
+        text=[f"{value:.1f}"],
+        textposition="outside",
+        showlegend=False
+    ))
+
+    fig.update_layout(
+        title=dict(
+            text=title,
+            x=0,
+            xanchor="left",
+            font=dict(size=20)
+        ),
+        xaxis=dict(range=x_range, showticklabels=False, showgrid=False),
+        yaxis=dict(showticklabels=False),
+        height=90,
+        margin=dict(l=20, r=20, t=30, b=10)
+    )
+
+    return fig
 
 def display_player(player):
     
@@ -119,73 +182,47 @@ def display_player(player):
 
     ### Top Right Information
     with col_right:
-        def value_to_color(val):
-            if val <= -1:
-                return "red"
-            elif val <= 1:
-                return "yellow"
-            elif val >1:
-                return "green"
-        
-        def value_to_colors(val):
-            if val <= 3.75:
-                return "red"
-            elif val <= 4.25:
-                return "yellow"
-            elif val >4.25:
-                return "green"
-        bar_colors = [value_to_color(v) for v in player_metrics.values()]
-        bar_colors_2 = [value_to_colors(v) for v in player_metrics.values()]
-        # Column title
+        player_metrics = {
+            "Quality of Player": player["Film Grade"],
+            "Average Value Metric": player["Average Value"]
+        }
         st.markdown(
-            "<h1 style='text-align: center; font-size: 22px;'>Projection and Tier</h1>",
+            "<h1 style='text-align: center; font-size: 22px;'>Projection</h1>",
             unsafe_allow_html=True
         )
     
-        for metric, value in player_metrics.items():
-            fig = go.Figure()
-            # Add horizontal bar with value
-            fig.add_trace(go.Bar(
-                x=[value],
-                y=[0],  # single bar
-                orientation='h',
-                marker=dict(color=bar_colors if metric == "Average Value Metric" else bar_colors_2),
-                showlegend=False,
-                text = [f"{value:.1f}"],
-                textposition='outside'
-            ))
+        st.plotly_chart(
+            metric_bar(
+                "Film Grade",
+                player["Film Grade"],
+                [1, 7],
+                film_color(player["Film Grade"])
+            ),
+            use_container_width=True
+        )
     
-            fig.update_layout(
-                title=dict(
-                    text=metric,
-                    x=0.0,
-                    xanchor='left',
-                    yanchor='bottom',
-                    font=dict(size=22)
-                ),
-                xaxis=dict(range=[1,7] if metric == "Quality of Player" else [-10,10], showticklabels=False, showgrid=False),
-                yaxis=dict(showticklabels=False, showgrid=False),
-                height=100,
-                margin=dict(l=20, r=20, t=30, b=10),  # top margin gives space for title
-            )
-    
-            st.plotly_chart(fig, use_container_width=False)  # keep fixed width
-            
-
+        st.plotly_chart(
+            metric_bar(
+                "Average Value",
+                player["Average Value"],
+                [-10, 10],
+                av_color(player["Average Value"])
+            ),
+            use_container_width=True
+        )
         portal_entry = player["TRANSFER PORTAL"]
         tier = player["TIER"]
+        #proj = player["PRO PROJECTION"]
         fit = player["SCHEME FIT"]
         arch = player["ARCHETYPE"]
+            
         
-        with col_right:
-            st.markdown(
-                f"""
-                <h2 style='text-align: left; font-size: 12px';>
-                Transfer Portal: {portal_entry} <br> Tier: {tier} <br> Scheme Fit: {fit} <br> Archetype: {arch}
-                </h2>
-                """,
-                unsafe_allow_html = True
-            )
+    st.markdown(
+        f"""
+        **Transfer Portal:** {player['TRANSFER PORTAL']} | **Tier:** {player['TIER']}
+        \n**Scheme Fit:** {fit} | **Archetype:** {player['ARCHETYPE']}
+        """
+    )
         
         
     ##Middle Table

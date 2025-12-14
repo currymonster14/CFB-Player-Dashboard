@@ -9,7 +9,19 @@ Created on Sat Dec 13 00:30:15 2025
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-#st.set_page_config(page_title="Player Evaluation", layout="wide")
+st.set_page_config(page_title="IOL Evaluation", layout="wide")
+
+# 🔒 Hide this page from the sidebar
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebarNav"] a[href*="Path_Evaluations"] {
+        display: none !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # ----------------------------
 # Functions
@@ -98,7 +110,7 @@ def display_player(player):
             {player['Name']} – {player['Position']}
         </h1>
         <h2 style='text-align:center; font-size:30px; margin-top:0;'>
-            {player['COLLEGE']} • #{player['Number']} • {player['Conference']}
+            {player['COLLEGE']} • #{int(player['Number'])} • {player['Conference']}
         </h2>
         """,
         unsafe_allow_html=True

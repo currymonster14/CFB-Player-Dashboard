@@ -8,7 +8,19 @@ Created on Fri Dec 12 22:06:37 2025
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-#st.set_page_config(page_title="Player Evaluation", layout="wide")
+st.set_page_config(page_title="OT Evaluation", layout="wide")
+
+# 🔒 Hide this page from the sidebar
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebarNav"] a[href*="Path_Evaluations"] {
+        display: none !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # ----------------------------
 # Functions
@@ -106,7 +118,7 @@ def display_player(player):
     st.markdown(
         f"""
         <h2 style='text-align:center; font-size:30px; margin-top:0;'>
-            {player['COLLEGE']} • #{player['#']} • {player['Conference']}
+            {player['COLLEGE']} • #{int(player['#'])} • {player['Conference']}
         </h2>
         """,
         unsafe_allow_html=True
@@ -190,8 +202,8 @@ def display_player(player):
         
     st.markdown(
         f"""
-        **Transfer Portal:** {player['TRANSFER PORTAL']} | **Tier:** {player['TIER']} | **Scheme Fit:** {player['PRO PROJECTION']}
-        | **Archetype:** {player['ARCHETYPE']}
+        **Transfer Portal:** {player['TRANSFER PORTAL']} | **Tier:** {player['TIER']}
+        \n **Scheme Fit:** {player['PRO PROJECTION']} | **Archetype:** {player['ARCHETYPE']}
         """
     )
     

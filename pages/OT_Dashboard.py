@@ -11,6 +11,18 @@ import streamlit as st
 from urllib.parse import quote
 
 st.set_page_config(page_title="OT Dashboard", layout="wide")
+
+# 🔒 Hide this page from the sidebar
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebarNav"] a[href*="Path_Evaluations"] {
+        display: none !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 def load_data():
     df1 = pd.read_excel("Utah Transfer Portal Master Sheet.xlsx", sheet_name=5, header = 1)
     df2 = pd.read_excel("Utah TP Cross Check Board.xlsx", sheet_name=6)
@@ -69,16 +81,30 @@ data = data[data['GRADE'].between(min_grade, max_grade)]
 # ----------------------------
 # Add clickable link
 data["PLAYER_DETAIL_LINK"] = data["player_id"].apply(
-    lambda pid: f"/OT_Path_Evaluations?player_id={pid}"
-    )
+    lambda pid: f"OT_Path_Evaluations?player_id={pid}"
+)
 
-cols = ["PLAYER_DETAIL_LINK", "Name", "COLLEGE", "Conference", "TRANSFER PORTAL", "TIER", "SCHEME FIT", "GRADE", "ARCHETYPE"]
+cols = [
+    "PLAYER_DETAIL_LINK",
+    "Name",
+    "COLLEGE",
+    "Conference",
+    "TRANSFER PORTAL",
+    "TIER",
+    "SCHEME FIT",
+    "GRADE",
+    "ARCHETYPE",
+]
 
 st.write("### Offensive Tackle")
+
 st.dataframe(
     data[cols],
     column_config={
-        "PLAYER_DETAIL_LINK": st.column_config.LinkColumn(label="View", display_text="Evaluation")
+        "PLAYER_DETAIL_LINK": st.column_config.LinkColumn(
+            label="View",
+            display_text="Evaluation",
+        )
     },
-    hide_index=True
+    hide_index=True,
 )

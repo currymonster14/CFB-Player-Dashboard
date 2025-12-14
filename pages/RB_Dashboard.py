@@ -13,6 +13,17 @@ import streamlit as st
 from urllib.parse import quote
 
 st.set_page_config(page_title="RB Dashboard", layout="wide")
+# 🔒 Hide this page from the sidebar
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebarNav"] a[href*="Path_Evaluations"] {
+        display: none !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 def load_data():
     df1 = pd.read_excel("Utah Transfer Portal Master Sheet.xlsx", sheet_name=2)
     df2 = pd.read_excel("Utah TP Cross Check Board.xlsx", sheet_name=3)
@@ -35,18 +46,49 @@ def load_data():
 
 data = load_data()
 
-# Filters
-# ----------------------------
-conf = st.sidebar.multiselect("Conference", ["All"] + sorted(data["CONF"].dropna().unique()))
-arch = st.sidebar.multiselect("Archetype", ["All"] + sorted(data["ARCHETYPE"].dropna().unique()))
-scheme = st.sidebar.selectbox("Scheme Fit", ["All"] + sorted(data["SCHEME FIT"].dropna().unique()))
-tier = st.sidebar.multiselect("Tier", ["All"] + sorted(data["TIER"].dropna().unique()))
-portal = st.sidebar.multiselect(
-    "Transfer Portal",
-    ["All"] + sorted(data["TRANSFER PORTAL"].dropna().unique()),
-    default=["All"]
-)
+# Slider filter
+st.markdown("### Composite Score")
+min_grade, max_grade = st.slider("Composite Score", 1.0, 7.0, (1.0, 7.0), 0.1)
+data = data[data['GRADE'].between(min_grade, max_grade)]
+st.markdown("### Filters")
 
+col1, col2, col3, col4, col5 = st.columns(5)
+st.divider()
+with col1:
+    conf = st.multiselect(
+        "Conference",
+        ["All"] + sorted(data["CONF"].dropna().unique()),
+        default=["All"]
+    )
+
+with col2:
+    arch = st.multiselect(
+        "Archetype",
+        ["All"] + sorted(data["ARCHETYPE"].dropna().unique()),
+        default=["All"]
+    )
+
+with col3:
+    scheme = st.selectbox(
+        "Scheme Fit",
+        ["All"] + sorted(data["SCHEME FIT"].dropna().unique())
+    )
+
+with col4:
+    tier = st.multiselect(
+        "Tier",
+        ["All"] + sorted(data["TIER"].dropna().unique()),
+        default=["All"]
+    )
+
+with col5:
+    portal = st.multiselect(
+        "Transfer Portal",
+        ["All"] + sorted(data["TRANSFER PORTAL"].dropna().unique()),
+        default=["All"]
+    )
+
+df = data.copy()
 # Apply filters
 if conf and "All" not in conf:
     data = data[data["CONF"].isin(conf)]
@@ -59,9 +101,6 @@ if tier and "All" not in tier:
 if portal and "All" not in portal:
     data = data[data["TRANSFER PORTAL"].isin(portal)]
 
-# Slider filter
-min_grade, max_grade = st.slider("Composite Score", 1.0, 7.0, (1.0, 7.0), 0.1)
-data = data[data['GRADE'].between(min_grade, max_grade)]
 
 # ----------------------------
 # Create clickable LinkColumn
