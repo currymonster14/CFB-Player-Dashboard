@@ -90,7 +90,7 @@ with col5:
 df = data.copy()
 # Apply filters
 if proj and "All" not in proj:
-    data = data[data["PRO PROJECTION"].isin(proj)]
+    data = data[data["PRO PROJECTION"]== proj]
 if conf and "All" not in conf:
     data = data[data["CONF"].isin(conf)]
 if arch and "All" not in arch:

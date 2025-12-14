@@ -185,8 +185,8 @@ def display_player(player):
     # =======================
     st.markdown(
         f"""
-        **Transfer Portal:** {player['TRANSFER PORTAL']} | **Tier:** {player['TIER']}
-        \n**Scheme Fit:** {player['SCHEME FIT']} | **Archetype:** {player['ARCHETYPE']}
+        **Transfer Portal:** {player['TRANSFER PORTAL']} | **Tier:** {player['TIER']} 
+        \n**Pass Scheme Fit:** {player['PASS SCHEME FIT']} | **Pass Scheme Fit:** {player['RUN SCHEME FIT']} | **Archetype:** {player['ARCHETYPE']}
         """
     )
     st.markdown("<h2 style='text-align:center;'>Player Grades</h2>", unsafe_allow_html=True)

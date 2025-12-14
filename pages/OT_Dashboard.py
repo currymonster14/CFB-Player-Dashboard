@@ -53,7 +53,7 @@ data = data[data['GRADE'].between(min_grade, max_grade)]
 # ----------------------------
 st.markdown("### Filters")
 
-col1, col2, col3, col4, col5 = st.columns(5)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 st.divider()
 with col1:
     conf = st.multiselect(
@@ -70,19 +70,25 @@ with col2:
     )
 
 with col3:
-    scheme = st.selectbox(
-        "Scheme Fit",
-        ["All"] + sorted(data["SCHEME FIT"].dropna().unique())
+    pass_scheme = st.selectbox(
+        "Pass Scheme Fit",
+        ["All"] + sorted(data["PASS SCHEME FIT"].dropna().unique())
     )
 
 with col4:
+    run_scheme = st.selectbox(
+        "Run Scheme Fit",
+        ["All"] + sorted(data["RUN SCHEME FIT"].dropna().unique())
+    )
+
+with col5:
     tier = st.multiselect(
         "Tier",
         ["All"] + sorted(data["TIER"].dropna().unique()),
         default=["All"]
     )
 
-with col5:
+with col6:
     portal = st.multiselect(
         "Transfer Portal",
         ["All"] + sorted(data["TRANSFER PORTAL"].dropna().unique()),
@@ -97,8 +103,10 @@ if conf and "All" not in conf:
     data = data[data["Conference"].isin(conf)]
 if arch and "All" not in arch:
     data = data[data["ARCHETYPE"].isin(arch)]
-if scheme != "All":
-    data = data[data["SCHEME FIT"] == scheme]
+if pass_scheme != "All":
+    data = data[data["PASS SCHEME FIT"] == pass_scheme]
+if run_scheme != "All":
+    data = data[data["RUN SCHEME FIT"] == run_scheme]    
 if tier and "All" not in tier:
     data = data[data["TIER"].isin(tier)]
 if portal and "All" not in portal:
@@ -113,17 +121,17 @@ data["PLAYER_DETAIL_LINK"] = data["player_id"].apply(
     lambda pid: f"OT_Path_Evaluations?player_id={pid}"
 )
 
-cols = [
-    "PLAYER_DETAIL_LINK",
-    "Name",
-    "COLLEGE",
-    "Conference",
-    "TRANSFER PORTAL",
-    "TIER",
-    "SCHEME FIT",
-    "GRADE",
-    "ARCHETYPE",
-]
+cols = ["PLAYER_DETAIL_LINK", 
+        "Name", 
+        "COLLEGE", 
+        "Conference", 
+        "TRANSFER PORTAL", 
+        "TIER", 
+        "PASS SCHEME FIT", 
+        "RUN SCHEME FIT", 
+        "GRADE", 
+        "ARCHETYPE"]
+
 
 st.write("### Offensive Tackle")
 
