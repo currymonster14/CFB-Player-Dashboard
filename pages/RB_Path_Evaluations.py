@@ -8,6 +8,7 @@ Created on Sun Jun 15 22:03:26 2025
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+from utils.grading_utils import grade_to_answer_and_color
 st.set_page_config(page_title="RB Evaluation", layout="wide")
 
 # 🔒 Hide this page from the sidebar
@@ -46,6 +47,66 @@ def load_data():
         data["Team"].str.replace(r"[^A-Za-z0-9]", "", regex=True).str.lower()
     )
     return data.reset_index(drop=True)
+
+def render_side_by_side_table(player, pass_questions_list, run_questions_list, title=None):
+    if title:
+        st.subheader(title)
+
+    # Determine max rows for looping
+    n_rows = max(len(pass_questions_list), len(run_questions_list))
+
+    html_table = """
+    <table style="border-collapse: collapse; width: 100%;">
+        <tr>
+            <th style="border:1px solid black; text-align:center;">Pass Criteria</th>
+            <th style="border:1px solid black; text-align:center;">Evaluation</th>
+            <th style="border:1px solid black; text-align:center;">Run Criteria</th>
+            <th style="border:1px solid black; text-align:center;">Evaluation</th>
+        </tr>
+    """
+
+    color_map = {"green": "#2ecc71", "yellow": "#f1c40f", "red": "#e74c3c", "gray": "#bdc3c7"}
+
+    for i in range(n_rows):
+        html_table += "<tr>"
+
+        # Pass side
+        if i < len(pass_questions_list):
+            q = pass_questions_list[i]
+            question = q["question"]
+            answer_col = q["answer_col"]
+            grade_col = q["grade_col"]
+            answer = player[answer_col] if answer_col in player.index else "N/A"
+            grade_val = player[grade_col] if grade_col in player.index else None
+            _, color = grade_to_answer_and_color(grade_val)
+            color_hex = color_map.get(color, "#bdc3c7")
+
+            html_table += f'<td style="border:1px solid black; text-align:center; padding:4px;"><b>{question}</b></td>'
+            html_table += f'<td style="border:1px solid black; text-align:left; padding:4px; background-color:{color_hex};">{answer}</td>'
+        else:
+            html_table += '<td style="border:1px solid black;"></td><td style="border:1px solid black;"></td>'
+
+        # Run side
+        if i < len(run_questions_list):
+            q = run_questions_list[i]
+            question = q["question"]
+            answer_col = q["answer_col"]
+            grade_col = q["grade_col"]
+            answer = player[answer_col] if answer_col in player.index else "N/A"
+            grade_val = player[grade_col] if grade_col in player.index else None
+            _, color = grade_to_answer_and_color(grade_val)
+            color_hex = color_map.get(color, "#bdc3c7")
+
+            html_table += f'<td style="border:1px solid black; text-align:center; padding:4px;"><b>{question}</b></td>'
+            html_table += f'<td style="border:1px solid black; text-align:left; padding:4px; background-color:{color_hex};">{answer}</td>'
+        else:
+            html_table += '<td style="border:1px solid black;"></td><td style="border:1px solid black;"></td>'
+
+        html_table += "</tr>"
+
+    html_table += "</table>"
+
+    st.markdown(html_table, unsafe_allow_html=True)
 
 def film_color(val):
     if val <= 3.75:
@@ -241,75 +302,66 @@ def display_player(player):
         unsafe_allow_html = True
     )
 
-    pass_data, run_data = get_pass_run_data(player)
-        
-    # Build HTML table
-    html_table = """
-    <table style="border-collapse: collapse; width: 100%;">
-        <tr>
-            <th colspan="2" style="border: 1px solid black; text-align:center;">Pass</th>
-            <th colspan="2" style="border: 1px solid black; text-align:center;">Run</th>
-        </tr>
-        <tr>
-            <th style="border: 1px solid black; text-align:center;"> Criteria Question</th>
-            <th style="border: 1px solid black; text-align:center;">Evaluation</th>
-            <th style="border: 1px solid black; text-align:center;">Criteria Question</th>
-            <th style="border: 1px solid black; text-align:center;">Evaluation</th>
-        </tr>
-    """
-    
-    # Number of rows is max of pass/run
-    n_rows = max(len(pass_data), len(run_data))
-    
-    for i in range(n_rows):
-        html_table += "<tr>"
-        # Pass column
-        if i < len(pass_data):
-            q, a = pass_data[i]
-            html_table += f'<th style="border: 1px solid black;">{q}</td>'
-            html_table += f'<td style="border: 1px solid black;">{a}</td>'
-        else:
-            html_table += '<th style="border: 1px solid black;"></td>' * 2
-    
-        # Run column
-        if i < len(run_data):
-            q, a = run_data[i]
-            html_table += f'<th style="border: 1px solid black;">{q}</td>'
-            html_table += f'<td style="border: 1px solid black;">{a}</td>'
-        else:
-            html_table += '<th style="border: 1px solid black;"></td>' * 2
-    
-        html_table += "</tr>"
-    
-    html_table += "</table>"
-
-    st.markdown(html_table, unsafe_allow_html=True)
-    
+      
     
 
-def get_pass_run_data(player):
-    # Map question -> column in Excel
-    pass_questions = {
-        "Man Coverage Matchup Advantage": "Man Coverage Matchup Advantage",
-        "Field Stretcher": "Field Stretcher",
-        "Ball Skills": "Ball Skills",
-        "Yards After Catch": "Yards After Catch",
-        "Pass Protection": "Pass Protection"
+    pass_questions = [
+    {
+        "question": "Man Coverage Matchup Advantage",
+        "answer_col": "Man Coverage Matchup Advantage",
+        "grade_col": "Grade"
+    },
+    {
+        "question": "Field Stretcher",
+        "answer_col": "Field Stretcher",
+        "grade_col": "Grade.1"
+    },
+    {
+        "question": "Ball Skills",
+        "answer_col": "Ball Skills",
+        "grade_col": "Grade.2"
+    },
+    {
+        "question": "Yards After Catch",
+        "answer_col": "Yards After Catch",
+        "grade_col": "Grade.3"
+    },
+    {
+        "question": "Pass Protection",
+        "answer_col": "Pass Protection",
+        "grade_col": "Grade.4"
     }
+    ]
 
-    run_questions = {
-        "Gap Run Vision": "Gap Run Vision",
-        "Zone Run Vision": "Zone Run Vision",
-        "Create At/Behind the LOS": "Create At/Behind the LOS",
-        "Create At the 2nd Level": "Create At the 2nd Level",
-        "Homerun Ability": "Homerun Ability"
+    run_questions = [
+    {
+        "question": "Gap Run Vision",
+        "answer_col": "Gap Run Vision",
+        "grade_col": "Grade.5"
+    },
+    {
+        "question": "Zone Run Vision",
+        "answer_col": "Zone Run Vision",
+        "grade_col": "Grade.6"
+    },
+    {
+        "question": "Create At/Behind the LOS",
+        "answer_col": "Create At/Behind the LOS",
+        "grade_col": "Grade.7"
+    },
+    {
+        "question": "Create At the 2nd Level",
+        "answer_col": "Create At the 2nd Level",
+        "grade_col": "Grade.8"
+    },
+    {
+        "question": "Homerun Ability",
+        "answer_col": "Homerun Ability",
+        "grade_col": "Grade.9"
     }
+    ]
 
-    # Build lists of tuples (Question, Answer)
-    pass_data = [(q, player[col]) for q, col in pass_questions.items() if col in player.index]
-    run_data = [(q, player[col]) for q, col in run_questions.items() if col in player.index]
-
-    return pass_data, run_data
+    render_side_by_side_table(player, pass_questions, run_questions, title="Player Evaluation")
 
 # ----------------------------
 # Main
