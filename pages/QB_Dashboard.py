@@ -45,8 +45,22 @@ def load_data():
 
 data = load_data()
 
+# --- Name Search Filter ---
+player_list = data["Name"].dropna().sort_values().unique()
+selected_player = st.selectbox(
+    "Search by Player Name",
+    [""] + list(player_list)  # empty string allows "no selection"
+)
+
+# Start with a filtered copy
+filtered_data = data.copy()
+
+# Apply player filter if selected
+if selected_player:
+    filtered_data = filtered_data[filtered_data["Name"] == selected_player]
+
+
 # Slider filter
-st.markdown("### Composite Score")
 min_grade, max_grade = st.slider("Composite Score", 1.0, 7.0, (1.0, 7.0), 0.1)
 data = data[data['GRADE'].between(min_grade, max_grade)]
 st.markdown("### Filters")
@@ -56,57 +70,55 @@ st.divider()
 with col1:
     conf = st.multiselect(
         "Conference",
-        ["All"] + sorted(data["CONF"].dropna().unique()),
+        ["All"] + sorted(filtered_data["CONF"].dropna().unique()),
         default=["All"]
     )
 
 with col2:
     arch = st.multiselect(
         "Archetype",
-        ["All"] + sorted(data["ARCHETYPE"].dropna().unique()),
+        ["All"] + sorted(filtered_data["ARCHETYPE"].dropna().unique()),
         default=["All"]
     )
 
 with col3:
     scheme = st.selectbox(
         "Scheme Fit",
-        ["All"] + sorted(data["SCHEME FIT"].dropna().unique())
+        ["All"] + sorted(filtered_data["SCHEME FIT"].dropna().unique())
     )
 
 with col4:
     tier = st.multiselect(
         "Tier",
-        ["All"] + sorted(data["TIER"].dropna().unique()),
+        ["All"] + sorted(filtered_data["TIER"].dropna().unique()),
         default=["All"]
     )
 
 with col5:
     portal = st.multiselect(
         "Transfer Portal",
-        ["All"] + sorted(data["TRANSFER PORTAL"].dropna().unique()),
+        ["All"] + sorted(filtered_data["TRANSFER PORTAL"].dropna().unique()),
         default=["All"]
     )
 
-df = data.copy()
-# Apply filters
+# --- Apply remaining filters on top of player filter ---
 if conf and "All" not in conf:
-    data = data[data["CONF"].isin(conf)]
+    filtered_data = filtered_data[filtered_data["CONF"].isin(conf)]
 if arch and "All" not in arch:
-    data = data[data["ARCHETYPE"].isin(arch)]
+    filtered_data = filtered_data[filtered_data["ARCHETYPE"].isin(arch)]
 if scheme != "All":
-    data = data[data["SCHEME FIT"] == scheme]
+    filtered_data = filtered_data[filtered_data["SCHEME FIT"] == scheme]
 if tier and "All" not in tier:
-    data = data[data["TIER"].isin(tier)]
+    filtered_data = filtered_data[filtered_data["TIER"].isin(tier)]
 if portal and "All" not in portal:
-    data = data[data["TRANSFER PORTAL"].isin(portal)]
-
+    filtered_data = filtered_data[filtered_data["TRANSFER PORTAL"].isin(portal)]
 
 
 # ----------------------------
 # Create clickable LinkColumn
 # ----------------------------
 # Add clickable link
-data["PLAYER_DETAIL_LINK"] = data["player_id"].apply(
+filtered_data["PLAYER_DETAIL_LINK"] = filtered_data["player_id"].apply(
     lambda pid: f"QB_Path_Evaluations?player_id={pid}"
     )
 
@@ -114,7 +126,7 @@ cols = ["PLAYER_DETAIL_LINK", "Name", "Team", "CONF", "TRANSFER PORTAL", "TIER",
 
 st.write("### Quarterbacks")
 st.dataframe(
-    data[cols],
+    filtered_data[cols],
     column_config={
         "PLAYER_DETAIL_LINK": st.column_config.LinkColumn(label="View", display_text="Evaluation")
     },

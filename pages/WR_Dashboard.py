@@ -44,9 +44,16 @@ def load_data():
 
 data = load_data()
 
-# Filters
-# Slider filter
-st.markdown("### Composite Score")
+# Name Search
+player_list = data["Name"].dropna().sort_values().unique()
+selected_player = st.selectbox(
+    "Search by Player Name",
+    [""] + list(player_list)  # empty string allows "no selection"
+)
+
+if selected_player:
+    data = data[data["Name"] == selected_player]
+    
 min_grade, max_grade = st.slider("Composite Score", 1.0, 7.0, (1.0, 7.0), 0.1)
 data = data[data['GRADE'].between(min_grade, max_grade)]
 st.markdown("### Filters")
