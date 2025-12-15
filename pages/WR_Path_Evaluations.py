@@ -338,3 +338,170 @@ if player.empty:
     st.error(f"No player found with player_id: {player_id}")
 else:
     display_player(player.iloc[0])
+
+##Middle Table
+st.markdown(
+    f"""
+    <h1 style='text-align: center; font-size: 30px'>
+        Player Grades
+    </h1>
+    <h2 style='text-align: center; font-size: 30px'>
+        Compare Two Players Side-By-Side
+    </h2>
+    """,
+    unsafe_allow_html = True
+)
+
+# Map question -> column in Excel
+pass_questions = [
+    {"question": "Vs Press Coverage", "answer_col": "Vs Press Coverage", "grade_col": "Grade"},
+    {"question": "vs Off Coverage", "answer_col": "vs Off Coverage", "grade_col": "Grade.1"},
+    {"question": "vs Man Coverage", "answer_col": "vs Man Coverage", "grade_col": "Grade.2"},
+    {"question": "vs Zone Coverage", "answer_col": "vs Zone Coverage", "grade_col": "Grade.3"},
+]
+
+run_questions = [
+    {"question": "Ball Skills", "answer_col": "Ball Skills", "grade_col": "Grade.4"},
+    {"question": "Field Stretching", "answer_col": "Field Stretching", "grade_col": "Grade.5"},
+    {"question": "Yards After Catch/Contact", "answer_col": "Yards After Catch/Contact", "grade_col": "Grade.6"}
+]
+
+
+player1 = player.iloc[0]  # the current page’s player
+player2_name = st.selectbox("Select Player 2", [""] + list(data["Name"].sort_values().unique()))
+
+if player2_name:  # Only run if something is selected
+    player2_df = data[data["Name"] == player2_name]
+    if not player2_df.empty:
+        player2 = player2_df.iloc[0]
+    else:
+        st.warning(f"No player found with name {player2_name}")
+        player2 = None
+else:
+    player2 = None
+
+
+if player2 is not None:
+    # render side-by-side table with player1 and player2
+    # Combine questions for comparison
+    comparison_questions = pass_questions + run_questions
+
+    # Build DataFrame
+    comparison_df = pd.DataFrame({
+        "Criteria Question": [q["question"] for q in comparison_questions],
+        "Player 1": [player1[q["answer_col"]] if q["answer_col"] in player1.index else "N/A" for q in comparison_questions],
+        "Player 2": [player2[q["answer_col"]] if q["answer_col"] in player2.index else "N/A" for q in comparison_questions],
+        "Player 1 Grade": [player1[q["grade_col"]] if q["grade_col"] in player1.index else None for q in comparison_questions],
+        "Player 2 Grade": [player2[q["grade_col"]] if q["grade_col"] in player2.index else None for q in comparison_questions],
+    })
+
+    color_map = {"green": "#2ecc71", "yellow": "#f1c40f", "red": "#e74c3c", "gray": "#bdc3c7"}
+
+    col1, col2, col3 = st.columns([3,4,3])
+    
+    # Player names at top
+    col1.markdown(
+        f"<div style='font-weight:bold; text-align:center; font-size:15px; padding:12px;'>{player1['Name']}</div>", 
+        unsafe_allow_html=True
+    )
+    col2.markdown(
+        f"<div style='font-weight:bold; text-align:center; font-size:15px; padding:12px'>Criteria Questions</div>", 
+        unsafe_allow_html=True
+    )
+    col3.markdown(
+        f"<div style='font-weight:bold; text-align:center; font-size:15px; padding:12px;'>{player2['Name']}</div>", 
+        unsafe_allow_html=True
+    )
+    
+    for idx, row in comparison_df.iterrows():
+        
+        
+        _, color1 = grade_to_answer_and_color(row["Player 1 Grade"])
+        _, color2 = grade_to_answer_and_color(row["Player 2 Grade"])
+        
+        # Player 1
+        col1.markdown(
+            f"<div style='background-color:{color_map.get(color1,'gray')}; "
+            f"padding:8px; border-radius:5px; text-align:center; vertical-align:middle; height:40px;'>"
+            f"{row['Player 1']}</div>",
+            unsafe_allow_html=True
+        )
+        
+        # Criteria
+        col2.markdown(
+            f"<div style='text-align:center; font-weight:bold; padding:8px; vertical-align:middle; height:40px;'>"
+            f"{row['Criteria Question']}</div>",
+            unsafe_allow_html=True
+        )
+        
+        # Player 2
+        col3.markdown(
+            f"<div style='background-color:{color_map.get(color2,'gray')}; "
+            f"padding:8px; border-radius:5px; text-align:center; vertical-align:middle; height:40px;'>"
+            f"{row['Player 2']}</div>",
+            unsafe_allow_html=True
+        )
+
+    # Player Film Grades
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    player1_grade = player1["Film Grade"]
+    player2_grade = player2["Film Grade"]
+    
+    # Negative for left side
+    player1_grade_neg = -player1_grade
+    
+    fig = go.Figure()
+    
+        # Player 1 bar (left) with dynamic color
+    fig.add_trace(go.Bar(
+        x=[player1_grade_neg],
+        y=["Film Grade"],  # single row
+        orientation='h',
+        name=player1['Name'],
+        marker_color=film_color(player1_grade),
+        text=[f"{player1['Name']} - {player1_grade:.2f}"],
+        textposition="inside",
+        insidetextanchor="middle",
+        width=0.6  # thicker bar
+    ))
+    
+    # Player 2 bar (right) with dynamic color
+    fig.add_trace(go.Bar(
+        x=[player2_grade],
+        y=["Film Grade"],
+        orientation='h',
+        name=player2['Name'],
+        marker_color=film_color(player2_grade),
+        text=[f"{player2['Name']} - {player2_grade:.2f}"],
+        textposition="inside",
+        insidetextanchor="middle",
+        width=0.6
+    ))
+    
+    fig.update_layout(
+        barmode='overlay',
+        title=dict(
+            text="Film Grade Comparison",
+            x=0.5,           # center the title
+            xanchor='center',
+            font=dict(size=20)
+        ),
+        xaxis=dict(
+            showticklabels=False,
+            showgrid=False,
+            zeroline=True
+        ),
+        yaxis=dict(
+            showticklabels=False
+        ),
+        height=300,
+        plot_bgcolor='white',
+        showlegend=False
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    pass
+
+
+else:
+    st.info("Select a player to see a comparison.")
