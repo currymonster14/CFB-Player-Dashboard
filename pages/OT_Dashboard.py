@@ -67,14 +67,14 @@ with col1:
     conf = st.multiselect(
         "Conference",
         ["All"] + sorted(data["Conference"].dropna().unique()),
-        default=["All"]
+        default=[]
     )
 
 with col2:
     arch = st.multiselect(
         "Archetype",
         ["All"] + sorted(data["ARCHETYPE"].dropna().unique()),
-        default=["All"]
+        default=[]
     )
 
 with col3:
@@ -93,14 +93,14 @@ with col5:
     tier = st.multiselect(
         "Tier",
         ["All"] + sorted(data["TIER"].dropna().unique()),
-        default=["All"]
+        default=[]
     )
 
 with col6:
     portal = st.multiselect(
         "Transfer Portal",
         ["All"] + sorted(data["TRANSFER PORTAL"].dropna().unique()),
-        default=["All"]
+        default=[]
     )
 
 df = data.copy()

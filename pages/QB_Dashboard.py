@@ -71,14 +71,14 @@ with col1:
     conf = st.multiselect(
         "Conference",
         ["All"] + sorted(filtered_data["CONF"].dropna().unique()),
-        default=["All"]
+        default=[]
     )
 
 with col2:
     arch = st.multiselect(
         "Archetype",
         ["All"] + sorted(filtered_data["ARCHETYPE"].dropna().unique()),
-        default=["All"]
+        default=[]
     )
 
 with col3:
@@ -91,14 +91,14 @@ with col4:
     tier = st.multiselect(
         "Tier",
         ["All"] + sorted(filtered_data["TIER"].dropna().unique()),
-        default=["All"]
+        default=[]
     )
 
 with col5:
     portal = st.multiselect(
         "Transfer Portal",
         ["All"] + sorted(filtered_data["TRANSFER PORTAL"].dropna().unique()),
-        default=["All"]
+        default=[]
     )
 
 # --- Apply remaining filters on top of player filter ---
